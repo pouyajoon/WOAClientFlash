@@ -1,0 +1,207 @@
+
+/*
+		public function setup_world() :void
+		{
+			var environment:b2AABB = new b2AABB();
+			environment.lowerBound.Set(0, 0);
+			environment.upperBound.Set(world_size_x, world_size_y);
+			var gravity:b2Vec2 = new b2Vec2(0.0,0.0);
+			the_world = new b2World(environment,gravity,true);	
+		}
+
+		public function setup_debugdraw() :void
+		{
+			debug_draw = new b2DebugDraw();
+			var debug_sprite:Sprite = new Sprite();
+			addChild(debug_sprite);
+			debug_draw.m_sprite=debug_sprite;
+			debug_draw.m_drawScale = m_physScale;
+			debug_draw.m_fillAlpha=0.5;
+			debug_draw.m_lineThickness=1;
+			debug_draw.m_drawFlags=b2DebugDraw.e_shapeBit;
+			the_world.SetDebugDraw(debug_draw);
+		}
+	*/
+	/*
+		public function create_circle(x:Number, y:Number, r:Number, d:Number, f:Number = 0.0, rest:Number = 0.0) :b2Body
+		{
+			var final_body:b2Body;
+			var the_body:b2BodyDef = new b2BodyDef();;
+			var cd:b2CircleDef = new b2CircleDef();
+			cd.radius = r;
+			cd.density = d;
+			cd.friction = f;
+			cd.restitution = rest;			
+			the_body.position.Set(x, y);
+			final_body = the_world.CreateBody(the_body);
+			final_body.CreateShape(cd);
+			final_body.SetMassFromShapes();
+			return final_body
+		}
+		*/
+		/*
+		public function DrawBox(x:Number, y:Number, w:Number, h:Number, _sprite:Sprite) : Shape
+		{
+		
+			var the_body:b2BodyDef;
+			var the_box:b2PolygonDef;
+			var final_body:b2Body;
+			the_body = new b2BodyDef();
+			the_body.position.Set(x, y);
+			the_box = new b2PolygonDef();			
+			the_box.SetAsBox(w, h);
+			the_box.friction=f;
+			the_box.density=d;
+			final_body=the_world.CreateBody(the_body);
+			final_body.CreateShape(the_box);
+			final_body.SetMassFromShapes();
+				
+	        var rect:Shape = new Shape(); 
+            // starting color filling
+            rect.graphics.beginFill(0x00FF00 , 1);            
+            //rect.graphics.drawCircle(x, y, w);
+            rect.graphics.drawRect(0, 0, w, h);
+            rect.graphics.endFill();  
+            rect.x = x;
+            rect.y = y;
+            _sprite.addChild(rect);
+			return rect;
+		}		
+		
+		
+        public function AntCircle(x:Number, y:Number, r:Number, _sprite:Sprite) :Shape
+        {
+            
+            // creating a new shape instance
+            var circle:Shape = new Shape(); 
+            // starting color filling
+            circle.graphics.beginFill(0xff9933 , 1);
+            // drawing circle 
+            circle.graphics.drawCircle(0 , 0 , r);
+            circle.graphics.endFill();        
+             
+            circle.graphics.beginFill(0x000000 , 1);
+            // drawing eye 
+            circle.graphics.drawCircle(r / 1.6 , 0 , r / 5);
+            circle.graphics.endFill();         
+
+            // repositioning shape
+            circle.x = world_size_x - x;                                 
+            circle.y = world_size_y - y;
+            
+            // adding displayobject to the display list
+            _sprite.addChild(circle); 
+            return circle;
+   
+        }
+        */
+		
+		
+		
+   /*
+//  	var responder_actions:Responder = new Responder( set_actions );
+//	nc.call("get_actions", responder_actions);  	
+	    
+//    myworld.the_world.Step(myworld.m_timeStep, myworld.m_iterations);
+   
+*/
+    //if ((Math.random() * 10) % 2 == 0)
+
+    
+    //this.tempo_share();
+	//add_log(this.width + "," + this.height + "update me");
+	
+	
+	
+			/*
+public function set_actions(c:Object) :void
+{
+	if (c.out.length > 0)
+	add_log("ready for actions : " + c.out.length);
+	
+	
+  	for each(var o:Object in c.out)
+	{
+  		if (o != null)
+  		{
+  			// catch the object (ant, ...) by id 
+  			if (myworld.draw_dynamic[o.id] != null)
+  			{
+  				var body:Shape = myworld.draw_dynamic[o.id].body as Shape;
+  				if (body != null)
+  				{
+  					// apply rule depending on the action
+  					//add_log("new action : " + o.type + ", " + o.pos.x + ", " + o.pos.y + " on " + o.id);
+			  		switch (o.type)
+			  		{
+			  			case "force" :
+			  				//add_log("applying force from : " + body.GetPosition().x + ", " + body.GetPosition().y);
+			  				//body.ApplyForce(new b2Vec2(o.pos.x, o.pos.y), body.GetPosition());				  			
+			  			break;
+			  			case "impulse" :
+			  				//body.ApplyImpulse(new b2Vec2(o.pos.x, o.pos.y), body.GetPosition());
+			  				////myworld.print_dynamic(o);
+			  			break;  	
+			  			case "linearVelocity" :
+			  				add_log("applying linearVelocity : [" + o.pos.x + ", " + o.pos.y + "]");
+
+			  				 
+			  			break;		
+			  		}  	  				
+  				}
+  				else
+  				{
+  					add_log("body is null for action : " + o.id);
+  				}
+  			}
+  			else
+  			{
+  				var index:int = myworld.missing_bodys.getItemIndex(o.id);
+  				//add_log("index of " + o.id + " is " + index + "");
+  				if (index == -1) 
+  				{
+  					add_log("no body for action : " + o.id + " -> added on missing elements");
+  					myworld.missing_bodys.addItem(o.id);  					
+  				}  		
+  				else
+  				{
+  					//add_log("no place for me : " + o.id + "");
+  				}		
+  				//print_dynamic(o);
+  			}
+  			
+  			//dump(o);
+		
+  			//add_log("o is not null");
+  			//add_log(o.toString());
+  			//add_log("type: " + o.type + "id: " + o.id + " at " + o.pos.x + ", " + o.pos.y);
+  		}
+  		else
+  		{
+  			add_log("o is null");
+  			
+  		}	
+	}
+	if (myworld.missing_bodys.length > 0)
+	{
+		var responder_bodys:Responder = null;
+		//var id:Number = myworld.missing_bodys.toArray().pop();
+			//responder_bodys = new Responder(print_colonies);
+			//nc.call("get_this_body", responder_bodys, id);	
+		
+		//for (id in myworld.missing_bodys)
+		{
+			//responder_bodys = new Responder(print_colonies);
+			//nc.call("get_this_body", responder_bodys, id);
+				
+		}
+		
+		//responder_bodys = new Responder(print_colonies);
+		//nc.call("get_bodys", responder_bodys, "hello");	
+		//nc.call("get_bodys", responder_bodys, new DrawList(myworld.missing_bodys));
+		
+		//myworld.missing_bodys.;
+	}
+}
+
+*/

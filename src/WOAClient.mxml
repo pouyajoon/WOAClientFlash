@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+frameRate="100" applicationComplete="init()">
+
+
+	<mx:VDividedBox width="100%" height="100%" verticalGap="0">
+	<!--
+        <mx:Canvas label="Top margin" width="100%" height="100"  backgroundColor="#000000">	                
+        </mx:Canvas>
+	-->
+	    <mx:Canvas label="Top" width="100%" height="400" backgroundColor="#000000">
+
+	        <mx:HDividedBox width="100%" height="100%" horizontalGap="0">
+	   			<!--     
+	            <mx:Canvas label="Top Left margin" width="10" height="100%"  backgroundColor="#000000">	                
+	            </mx:Canvas>
+				-->
+	
+	            <mx:Canvas id="canvas_world" label="Top Left" width="800" height="100%"  backgroundColor="#00CC00">	                
+	            </mx:Canvas>
+
+	
+	            <mx:Canvas label="Top Right" width="100%" height="100%" backgroundColor="#000000" >
+					<mx:Button id="c_sendButton" width="100" height="20" left="0" top="0" label="time"/>
+					<mx:Button id="b_colonies" width="100" height="20" left="0" top="20" label="colonies"/>
+					
+					<mx:Button id="b_getPlayerInfo" width="50" height="20" left="0" top="40" label="PlayerInfo"/>
+					<mx:Button id="b_minus" width="50" height="20" left="55" top="40" label="-"/>
+					
+					<mx:Label id="l_world_scroll" width="300" height="26.136364" left="0" top="60" color="white"/>
+					<mx:Label id="l_world_zoom" width="300" height="20" left="0" top="85" color="white"/>
+					<mx:Label id="l_mouse_ant"  width="300" height="25.757576" left="0" top="104" color="white"/>
+					<mx:Label id="l_mouse_real"  width="300" height="25.757576" left="0" top="128" color="white"/>					
+					<mx:Label id="l_woa_tempo"  width="300" height="21.81818" left="0" top="152" color="white" />
+					
+					<mx:Label id="l_food_size"  width="80" height="22" left="0" top="173" color="white" text="Food Size:"/>
+					<mx:TextInput id="ti_food_size" width="88" height="22" left="80" top="173" color="black" text="80"/>
+					<mx:DataGrid id="dg_colonyinfo" x="0" y="203" height="66" width="277">
+						<mx:columns>
+							<mx:DataGridColumn headerText="Colony" dataField="colony_name" width="50"/>
+							<mx:DataGridColumn headerText="Ants" dataField="ant_number"/>
+							<mx:DataGridColumn headerText="Food" dataField="food_storage"/>
+						</mx:columns>
+					</mx:DataGrid>
+					
+		        </mx:Canvas>
+	
+	        </mx:HDividedBox>
+	    </mx:Canvas>
+	
+	    <mx:Canvas label="Bottom" width="100%" height="100%" backgroundColor="#000000" >
+			<mx:TextArea id="c_chatBox" width="100%" height="100%" left="0" top="0"  text="" borderColor="black" 
+				scroll="false" 
+				color="white" contentBackgroundColor="#000000"/>		    
+		    </mx:Canvas>
+	
+	</mx:VDividedBox>
+
+<mx:Script><![CDATA[
+	import Box2D.General.*;
+	
+	import com.unicate.*;
+	
+	import flash.display.Sprite;
+	import flash.events.NetStatusEvent;
+	import flash.net.NetConnection;
+	import flash.net.ObjectEncoding;
+	
+	import flashx.textLayout.events.UpdateCompleteEvent;
+	
+	import mx.collections.ArrayCollection;
+	import mx.controls.Alert;
+	import mx.controls.List;
+	import mx.controls.SWFLoader;
+	
+	import woa.*;
+	import woa.WoaObject;
+	import woa.dynamics.*;
+	import woa.elements.*;
+	import woa.statics.*;
+
+
+
+private var nc:NetConnection;
+public var myworld:WOAWorld;
+public var m_input:Input;
+public var woa_tempo:Object;
+public var woa_woal:Object;
+//public var sp:Sprite;
+//    public class Red5FirstClient extends Sprite
+
+// first funciton called : entrance point
+// set background & some event listners, setup input object
+public function init(): void
+{
+	this.setStyle("backgroundColor","#00CC00");
+	addEventListener(Event.ENTER_FRAME, update, false, 0, true);
+	add_log("Hello!");
+
+	//sp = new Sprite();
+	//this.stage.addChild(sp);
+	
+	myworld = new WOAWorld(this);
+	//myworld.width = 800;
+	//myworld.height = 200;
+	
+	var bg_s:Sprite = new Sprite();
+	var bg:Shape = new Shape();
+	
+//    bg.graphics.beginFill(0x00FFEE , 1);                
+//    bg.graphics.drawRect(800, 0, this.width - 810, this.height);
+//    bg.graphics.drawRect(0, 0, 200, 200);
+//    bg.graphics.endFill(); 	
+//    
+    bg_s.addChild(bg);
+    
+    
+	tempX = myworld.x;
+	tempY = myworld.y;
+	tempW = myworld.width;
+	tempH = myworld.height;
+ 
+   	//bg_s.addChild(myworld);
+    
+    //this.setChildIndex(this, 3);
+    //this.setChildIndex(bg, 1);
+    //this.setChildIndex(myworld, 2);
+
+	
+ 	
+	//myworld.height = 600; 	
+
+	//myworld.width = 800;
+	//myworld.height = 600;
+		
+ 	//this.stage.addChild(bg_s);
+ 	//this.stage.addChild(myworld);
+ 	canvas_world.rawChildren.addChild(myworld);
+ 	//canvas_world.rawChildren.setChildIndex(canvas_world, 0);
+	
+	m_input = new Input(this);
+	//pan.addChild(bg);
+	//pan.rawChildren.addChild(bg);
+		
+	//AntCircle(200, 200, 50);
+	//zoomCentre
+	addEventListener(MouseEvent.MOUSE_WHEEL, zoomCentre, false, 0, true);
+	addEventListener(MouseEvent.MOUSE_DOWN, MouseClicked, false, 0, true);
+
+
+//	this.stage.addChild(contentHolder);
+	this.stage.scaleMode = StageScaleMode.NO_SCALE;	
+
+	//Alert.show("Welcome");
+	Red5FirstClient();
+}
+  
+  
+public function callServer():void
+{
+	 var responder:Responder = new Responder( print_response );
+    //nc.call("getmyName", responder);
+    nc.call("createFood", responder, myworld.mouseX, myworld.translate_y(myworld.mouseY));
+}
+ 
+public function helloserver():void
+{
+	add_log("hello from server...");
+} 
+
+
+public function diedOnServer(_id:Number):void
+{
+	if (myworld.draw_dynamic[_id] != null)
+	{
+		var body:WoaObject = myworld.draw_dynamic[_id] as WoaObject;
+		add_log("this body died : " + body.toString());		
+		myworld.removeChild(body.woaimage);
+		body.woaimage = null;
+		myworld.draw_dynamic[_id] = null;		
+	}
+}
+ 
+public function MouseClicked(e:MouseEvent) :void
+{
+	//add_log("mouse clicked " + e.localX + ", " + e.localY + " | known : " + myworld.mouseXWorldPhys + ", " + mouseY);
+
+} 
+
+public var tempX:Number = 0; // position du point de transformation avant redimensionnement
+public var tempY:Number = 0; // position du point de transformation avant redimensionnement
+public var tempW:Number = 0; // largeur du conteneur avant redimensionnement
+public var tempH:Number = 0; // hauteur du conteneur avant redimensionnement 
+public var ratio:Number = 1.1;
+
+public function zoomCentre(e:MouseEvent):void // Zoom sur le centre du conteneur, quelque soit sa position
+ {
+	 if (e.delta < 0) //delta > 0 lorsque la molette va vers l'avant : réduction
+	 {
+		 myworld.width /= ratio;
+		 myworld.height /= ratio;
+		 //myworld.m_physScale /=  ratio;
+	 }
+	 else //delta < 0 lorsque la molette va vers l'arrière : agrandissement
+	 {
+	 	 //myworld.m_physScale *=  ratio;
+		 myworld.width *= ratio;
+		 myworld.height *= ratio;
+	 }
+	 myworld.x += (tempW-myworld.width) / (tempW/(mouseX-tempX));
+	 myworld.y += (tempH-myworld.height) / (tempH/(mouseY-tempY)); 
+	 tempX = myworld.x;
+	 tempY = myworld.y;
+	 tempW = myworld.width;
+	 tempH = myworld.height;
+ 	  	 
+ 	 //myworld.scaleX = myworld.m_physScale; 
+	 //myworld.scaleY = myworld.m_physScale;
+	 l_world_zoom.text = "world zooming : [" + myworld.width + ", " + myworld.height + "]";	 
+ } 
+  
+
+public function ZoomWorld(e:MouseEvent) :void
+{
+	//add_log("delta : " + e.delta);
+	
+	var oldCenterX:Number = 400;
+	var oldCenterY:Number = 200;
+		
+	if (e.delta >= 0)
+	{
+		var old_y:Number = myworld.y;
+		myworld.m_physScale *=  1.1;
+		//myworld.y = (myworld.y - old_y) * myworld.m_physScale;
+	}
+	else
+	{
+		myworld.m_physScale /=  1.1;
+	}
+	//if ((myworld.m_physScale - e.delta > 1))
+	if (myworld.m_physScale < 0)
+	{
+		myworld.m_physScale = 0;
+	}
+	
+	myworld.scaleX = myworld.m_physScale;
+	myworld.scaleY = myworld.m_physScale;
+	l_world_zoom.text = "world zooming : [" + myworld.m_physScale + "]";
+}
+
+  
+public var step:Number = 0;
+
+public function update(e:Event):void
+{
+	//add_log("again...");
+	l_world_scroll.text = "world scrolling : [" + myworld.x + ","  + myworld.y + "]";  
+	l_mouse_ant.text = "w mouse: [" + myworld.mouseXWorldPhys + ", "+ myworld.mouseYWorldPhys + "]";
+	l_mouse_real.text = "mouse real: [" + myworld.mouseX + ", "+ myworld.translate_y(myworld.mouseY) + "]";
+	
+  	//add_log(step.toString());
+  	
+  	if (!loggued) return; 	
+    switch (step)
+    {
+    	case 100 :
+ 			//woal_share();
+    		step = 0;
+    	break;
+    	case 0, 5, 10 :
+	 
+    	break;
+    	default : 			    	
+    }
+     step++;	
+ 
+}
+   
+public function add_log(text:String):void
+{
+	c_chatBox.text = text + "\n" + c_chatBox.text;  
+	//c_chatBox.verticalScrollPosition = c_chatBox.maxVerticalScrollPosition;
+}
+
+/*
+private function onEnterFrame(event:Event):void
+{
+    var responder:Responder = new Responder( print_response );
+    nc.call("when", responder);
+}		
+*/
+ 
+ public function getPlayerInfo(result:Object) :void
+ {
+	//dg_colonyinfo.
+ 	add_log(result.ci.antNumInteger + ", " + result.ci.food_current + "/" + result.ci.food_max);
+ }
+
+  private function OnBgetPlayerInfoClick(e:MouseEvent):void 
+  {
+      var responder:Responder = new Responder( getPlayerInfo );
+      nc.call("getPlayerInfo", responder, "pouya");
+	//myworld.debug_draw.m_drawScale += 0.2;
+	//myworld.x += 20;
+	//add_log("scaling : " + myworld.debug_draw.m_drawScale);
+  }
+  
+
+  private function onBMinusClick(e:MouseEvent):void 
+  {
+	//myworld.draw_dynamic = new Array();
+	//if (myworld.debug_draw.m_drawScale > 1)
+	{
+		//myworld.debug_draw.m_drawScale -= 0.2;
+	}
+	//myworld.x -= 20;
+	//add_log("scaling : " + myworld.debug_draw.m_drawScale);
+  }  
+
+  private function onButtonClick(e:MouseEvent):void 
+  {
+    var responder:Responder = new Responder( print_response );
+    nc.call("when", responder);
+  }
+
+  private function onBColoniesClick(e:MouseEvent):void 
+  {
+  	//woal_share();
+  	/*
+    var responder:Responder = new Responder( set_colonies );
+    nc.call("get_colonies", responder);
+    */
+  }
+ /*
+	public function dump(obj:Object) : void 
+	{
+		//add_log("dumping");
+		if (obj is ArrayCollection)
+		{
+			//add_log("array collection");
+			//add_log(name + ": " + obj[name] + ", " + typeof(obj[name]));
+			for (var o:Object in obj)
+			{
+				dump(o);
+			}		
+		}
+		else
+		{
+			//add_log("not array");
+			for(name in obj) 
+			{
+				add_log(name + ": " + obj[name] + ", " + typeof(obj[name]));
+				
+			}
+		
+		}
+		//add_log("inside");
+	}
+*/
+ 
+ 
+  public function GetWOAObjects(c:Object) : void
+  { 	
+  	
+  	//var print_list:ArrayCollection = c.dynamics as ArrayCollection;
+	
+	
+	//dump(c.out);
+	if (c == null) return;
+	if (c.dynamics == null) return;
+	var body:WoaObject = null;
+	
+ 	//add_log("incoming/existing dynamics size :" + c.dynamics.length + "/" + myworld.draw_dynamic.length);
+
+  	for each(var o:Object in c.dynamics)
+	{
+//		add_log("received dynamic object : " + o.type + ", id:[" + o.id + "] at : " + o.pos.x + ", " + o.pos.y + ", direction:" + o.direction);
+  		//add_log("o.type : " + o.type);
+  		if (o != null)
+  		{
+  			//dump(o);
+  			// new element not in dynamics
+  			if (myworld.draw_dynamic[o.id] == null)
+  			{				
+		  		switch (o.type)
+		  		{
+		  			case "food" :
+		  				body = new Food(myworld, o.id, o.pos.x, o.pos.y, o.size);				
+						body.Draw();							  				
+		  			break;
+		  			case "colony" :
+						 body = new Colony(myworld, o.id, o.pos.x, o.pos.y, o.size);				
+						body.Draw();							  				
+		  			break;
+		  			case "ant" :
+						body = new Ant(myworld, o.id, o.pos.x, o.pos.y, o.size);
+						body.Draw(); 
+		  			break;  
+		  			default:	
+		  			continue;		
+		  		}  		
+		  		// add to dynamics draw to remeber them by unique server generated id
+		  		myworld.draw_dynamic[o.id] = body;
+		  		//add_log(myworld.draw_dynamic.toString());		  				
+  			}
+  			else // already exists in dynamics
+  			{
+  				//add_log("already exists : " + o.id);
+  				switch (o.type)
+  				{
+  					case "colony" :
+  					// don't do anything
+  					break;
+  					default: // make it rotate & move
+		 				body = myworld.draw_dynamic[o.id] as WoaObject;
+						//add_log("body
+						if (body == null)
+						{
+							add_log("body is null");
+							add_log(myworld.draw_dynamic[o.id].toString());							
+						}
+						else
+						{
+							//add_log("rotate to rad = " + o.direction + ", deg = " + o.direction * 180/Math.PI);
+							//if (body.type == "food")
+							//{
+								//add_log("body id " + body.id + ", size:" + o.size);
+							//}
+							//add_log(myworld.draw_dynamic[o.id].toString() + " to " + o.pos.x + "," + o.pos.y);
+							body.Rotate(o.direction);
+							body.MoveTo(o.pos.x, o.pos.y);
+							body.Resize(o.size);
+						}
+						
+						
+  				}
+  			
+  			}
+  			//add_log("o is not null");
+  			//add_log(o.toString());
+  			//add_log("type: " + o.type + "id: " + o.id + " at " + o.pos.x + ", " + o.pos.y);
+  		}
+  		else
+  		{
+  			add_log("o is null");
+  		}
+  		
+  		//if (myworld.missing_bodys.contains(o.id))
+  		{
+  			//var index:int = myworld.missing_bodys.getItemIndex(o.id);
+  			//myworld.missing_bodys.removeItemAt(index);
+  			//add_log("body at index" + index + " with id[" + o.id + "] has been removed");
+  			//continue;
+  		}  	
+  				
+	}
+
+  }
+
+		
+public function Red5FirstClient(): void
+{
+   // new netconnection
+   
+  	c_sendButton.addEventListener(MouseEvent.CLICK, onButtonClick);
+  	b_colonies.addEventListener(MouseEvent.CLICK, onBColoniesClick);
+  	b_getPlayerInfo.addEventListener(MouseEvent.CLICK, OnBgetPlayerInfoClick);
+  	b_minus.addEventListener(MouseEvent.CLICK, onBMinusClick);
+  	
+  	
+	NetConnection.defaultObjectEncoding = flash.net.ObjectEncoding.AMF0;
+	SharedObject.defaultObjectEncoding = flash.net.ObjectEncoding.AMF0;
+	add_log("Starting...");
+    nc = new NetConnection();
+
+    // set encoding to old amf
+
+    nc.objectEncoding = ObjectEncoding.AMF0;
+
+    // netstatus event listening
+
+    nc.addEventListener( NetStatusEvent.NET_STATUS , onNetStatus );
+	nc.addEventListener( SecurityErrorEvent.SECURITY_ERROR, errorHandler );
+	nc.addEventListener( AsyncErrorEvent.ASYNC_ERROR, errorHandler );
+	nc.addEventListener( IOErrorEvent.IO_ERROR, errorHandler );            
+    
+    // connect to red5, passing false as parameter
+    //nc.connect("rtmp://localhost/bisou", false);
+    nc.connect("rtmp://pouya_top/WOAServerBisou", true);
+    
+    var responder:Responder = new Responder( print_response );
+    //nc.call("getmyName", responder);
+    nc.call("when", responder);
+    
+    nc.client = this;
+    
+    //woal_share();
+}
+
+
+private function woal_share(i:int):void
+{
+	add_log("sharing woal : " + i);
+	//myTrace("readSO");
+	try
+	{
+		woa_woal = SharedObject.getRemote("woalshare_" + i, nc.uri, false);
+		woa_woal.connect(nc);
+		woa_woal.addEventListener(SyncEvent.SYNC, woal_get);
+	}
+	catch (e:Error)
+	{
+		add_log("error : " + e.getStackTrace());
+		//world.woal.woaobject_screen_share();
+	}
+}
+
+private function woal_get(evt:SyncEvent) :void
+{
+	//add_log("woal message :" + woa_woal.data.message);
+	//add_log("woal has been updated:" + woa_woal.data.dynamics.length + " @" + woa_tempo.data.time);
+	GetWOAObjects(woa_woal.data);
+	//l_woa_tempo.text = woa_tempo.data.length;	
+}
+
+private function tempo_share():void
+{
+	//myTrace("readSO");
+	
+	woa_tempo = SharedObject.getRemote("tempo", nc.uri, false);
+	add_log("tempo shared get : " + woa_tempo);
+	woa_tempo.connect(nc);
+	woa_tempo.addEventListener(SyncEvent.SYNC, tempo_get);
+	add_log("tempo shared created");	
+}
+
+private function tempo_get(evt:SyncEvent) :void
+{
+	//add_log("tempo :" + evt.target.data.time);
+	l_woa_tempo.text = woa_tempo.data.time;	
+}
+
+
+protected function onGetName( result:String ) : void
+{
+	add_log(result);
+
+}   
+
+ protected function sendLogin() : void
+{
+	var responder:Responder = new Responder(login_result);
+	nc.call("login", responder, "pouya", "mdp");
+}
+
+public var loggued:Boolean = false;
+ 
+protected function login_result(result:String) : void
+{
+	add_log(result);
+
+    //var responder_colonies:Responder = new Responder( print_colonies );
+    //nc.call("get_colonies", responder_colonies);
+	tempo_share();		
+	loggued = true;	
+	woal_share(0);
+}   
+
+protected function print_response(result:String) : void
+{
+	add_log(result);
+	//l_woa_tempo.text = result;
+}   
+
+protected function onLoginResult( result:String ) : void
+{
+	add_log(result ? "Login Success!" : "Login Fail!?!");
+}        
+
+ protected function onNetStatus(event:NetStatusEvent) : void
+{
+	switch( event.info.code )
+	{
+		case "NetConnection.Connect.Success":
+			add_log("Connected, sending login");
+			sendLogin();
+		break;
+	
+		default:
+			add_log("ERROR!![" + event.info.code  + "] " + event.toString());
+		break;
+	}
+
+}
+
+protected function errorHandler(event:Event) : void
+{
+	add_log("ERROR!" + event.toString());
+}        
+
+
+
+]]></mx:Script>
+
+
+</mx:Application>
